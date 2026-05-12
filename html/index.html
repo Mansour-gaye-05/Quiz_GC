@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; font-family: 'Inter', sans-serif; }
@@ -17,7 +17,7 @@
     @keyframes fade { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
     .logo-wrapper { text-align: center; margin-bottom: 1rem; }
     .logo-icon { font-size: 3.5rem; color: #FFD700; display: flex; justify-content: center; gap: 1rem; }
-    .logo-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .logo-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-top: 0.5rem; }
     .subtitle { font-size: 0.8rem; color: #FFD700; margin-top: 0.2rem; }
     .conf-name { text-align: center; font-size: 1rem; font-weight: 600; background: linear-gradient(135deg, #FFD966, #FFB347); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 1rem 0; }
     .name-input-group { background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 1.5rem; margin-bottom: 1.5rem; }
@@ -68,13 +68,13 @@
 <div class="app-container">
   <div id="homeScreen" class="screen active">
     <div class="logo-wrapper">
-  <div class="logo-icon">
-    <i class="fas fa-hard-hat"></i>
-    <i class="fas fa-drafting-compass"></i>
-  </div>
-  <div class="logo-text-fallback">🏗️ CLUB GÉNIE CIVIL 🏗️</div>
-  <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
-</div>
+      <div class="logo-icon">
+        <i class="fas fa-hard-hat"></i>
+        <i class="fas fa-drafting-compass"></i>
+      </div>
+      <div class="logo-text">🏗️ CLUB GÉNIE CIVIL 🏗️</div>
+      <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
+    </div>
     <h2 class="conf-name">Conférence Les perspectives de l'intelligence artificielle dans le Génie Civil</h2>
     <div class="name-input-group">
       <label>📝 Votre nom</label>
