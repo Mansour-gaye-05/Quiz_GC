@@ -61,22 +61,6 @@
     .stat-label { font-size: 0.6rem; color: rgba(255,255,255,0.7); }
     .admin-link { text-align: center; margin-top: 15px; font-size: 0.8rem; }
     .admin-link a { color: #FFD700; text-decoration: none; opacity: 0.7; }
-    .notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(40, 167, 69, 0.95);
-  color: white;
-  padding: 1rem;
-  border-radius: 1rem;
-  z-index: 1000;
-  animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
     @media (max-width: 550px) { .app-container { padding: 1rem; } .question-text { font-size: 1rem; } }
   </style>
 </head>
@@ -206,48 +190,22 @@ function getDeviceId() {
   return id;
 }
 
-// ========== ÉCOUTEUR EN TEMPS RÉEL ==========
-let unsubscribe = null;
-
-function startRealtimeListener() {
-  if (unsubscribe) unsubscribe();
-  
-  unsubscribe = db.collection("scores")
-    .orderBy("score", "desc")
-    .orderBy("time", "asc")
-    .onSnapshot((snapshot) => {
-      const scores = [];
-      snapshot.forEach(doc => {
-        scores.push({ id: doc.id, ...doc.data() });
-      });
-      
-      // Mettre à jour l'affichage
-      updateDashboardStats(scores);
-      renderTable(scores, document.getElementById("search")?.value || "");
+async function getScores() {
+  try {
+    const snapshot = await db.collection("scores").get();
+    const scores = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      scores.push({ name: data.name, score: data.score, time: data.time, date: data.date });
     });
-}
-
-function updateDashboardStats(scores) {
-  document.getElementById("totalCount").innerHTML = scores.length;
-  document.getElementById("totalQuizzes").innerHTML = scores.length;
-  
-  const avg = scores.length ? (scores.reduce((a,b) => a + b.score, 0) / scores.length).toFixed(1) : 0;
-  document.getElementById("avgScore").innerHTML = avg;
-  
-  const best = scores.length ? Math.max(...scores.map(s => s.score)) : 0;
-  document.getElementById("bestScore").innerHTML = best;
-}
-
-// Remplacer l'appel loadData() par startRealtimeListener() dans login()
-function login() {
-  const pwd = document.getElementById("password").value;
-  if (pwd === ADMIN_PASSWORD) {
-    document.getElementById("loginPanel").style.display = "none";
-    document.getElementById("dashboard").style.display = "block";
-    startRealtimeListener(); // ← Écoute en temps réel
-    showWarning("✅ Connecté - Nouveaux participants visibles en direct");
-  } else {
-    showWarning("❌ Mot de passe incorrect");
+    scores.sort((a,b) => {
+      if (a.score !== b.score) return b.score - a.score;
+      return a.time - b.time;
+    });
+    return scores;
+  } catch (error) {
+    console.error("Erreur Firebase:", error);
+    return [];
   }
 }
 
@@ -528,45 +486,6 @@ function backToHome() {
   usernameInput.value = "";
   showScreen("home");
   updateLeaderboards();
-}
-
-function showNotification(name, score) {
-  const notif = document.createElement("div");
-  notif.className = "notification";
-  notif.innerHTML = `<i class="fas fa-user-plus"></i> Nouveau participant : ${name} (${score}/10)`;
-  document.body.appendChild(notif);
-  setTimeout(() => notif.remove(), 3000);
-}
-
-// Modifier le listener pour ajouter une notification
-function startRealtimeListener() {
-  if (unsubscribe) unsubscribe();
-  
-  let previousScores = [];
-  
-  unsubscribe = db.collection("scores")
-    .orderBy("score", "desc")
-    .orderBy("time", "asc")
-    .onSnapshot((snapshot) => {
-      const scores = [];
-      snapshot.forEach(doc => {
-        scores.push({ id: doc.id, ...doc.data() });
-      });
-      
-      // Détecter les nouveaux participants
-      if (previousScores.length > 0) {
-        const newScores = scores.filter(s => 
-          !previousScores.some(p => p.deviceId === s.deviceId)
-        );
-        newScores.forEach(newScore => {
-          showNotification(newScore.name, newScore.score);
-        });
-      }
-      
-      previousScores = [...scores];
-      updateDashboardStats(scores);
-      renderTable(scores, document.getElementById("search")?.value || "");
-    });
 }
 
 // Event listeners
