@@ -3,43 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administration - Quiz Génie Civil</title>
+  <title>Administration - Quiz</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); font-family: 'Inter', sans-serif; padding: 2rem; }
     .container { max-width: 1200px; margin: 0 auto; background: rgba(10,26,47,0.6); backdrop-filter: blur(14px); border-radius: 2rem; padding: 2rem; border: 1px solid rgba(255,215,0,0.25); }
-    h1 { color: #FFD700; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    h1 { color: #FFD700; margin-bottom: 2rem; }
     .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
     .stat-card { background: rgba(0,0,0,0.3); border-radius: 1rem; padding: 1rem; text-align: center; }
     .stat-number { font-size: 2rem; font-weight: bold; color: #FFD700; }
     .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
     .search-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .search-bar input { flex: 1; padding: 0.6rem 1rem; border-radius: 2rem; border: none; min-width: 200px; }
-    .btn { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; padding: 0.6rem 1.2rem; border-radius: 2rem; cursor: pointer; font-weight: bold; color: #0A1A2F; }
+    .search-bar input { flex: 1; padding: 0.6rem 1rem; border-radius: 2rem; border: none; }
+    .btn { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; padding: 0.6rem 1.2rem; border-radius: 2rem; cursor: pointer; font-weight: bold; }
     .btn-danger { background: #dc3545; color: white; }
-    .btn-secondary { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,215,0,0.5); color: white; }
     .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); color: white; }
     th { background: rgba(255,215,0,0.2); color: #FFD700; position: sticky; top: 0; }
-    td { color: white; }
     .delete-btn { background: rgba(220,53,69,0.8); border: none; color: white; padding: 0.3rem 0.8rem; border-radius: 0.5rem; cursor: pointer; }
     .login-box { max-width: 400px; margin: 100px auto; text-align: center; }
-    .login-box input { width: 100%; padding: 1rem; border-radius: 2rem; border: none; margin: 1rem 0; font-size: 1rem; }
-    .import-area { border: 2px dashed #FFD700; border-radius: 1rem; padding: 1.5rem; text-align: center; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s; }
-    .import-area:hover { background: rgba(255,215,0,0.1); }
-    .import-area i { font-size: 2rem; color: #FFD700; margin-bottom: 0.5rem; }
+    .login-box input { width: 100%; padding: 1rem; border-radius: 2rem; border: none; margin: 1rem 0; }
     .warning { background: rgba(220,53,69,0.9); color: white; padding: 0.8rem; border-radius: 1rem; margin: 1rem 0; display: none; }
     .warning.show { display: block; }
-    .success { background: rgba(40,167,69,0.9); }
     @media (max-width: 768px) { .stats { grid-template-columns: repeat(2,1fr); } .container { padding: 1rem; } }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1><i class="fas fa-user-shield"></i> Administration Quiz Génie Civil</h1>
+  <h1><i class="fas fa-user-shield"></i> Administration Quiz</h1>
 
   <div id="loginPanel" class="login-box">
     <i class="fas fa-lock" style="font-size: 3rem; color: #FFD700;"></i>
@@ -51,30 +45,20 @@
   <div id="dashboard" style="display:none">
     <div class="stats">
       <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Participants</div></div>
-      <div class="stat-card"><div class="stat-number" id="avgScore">0</div><div class="stat-label">Moyenne (/10)</div></div>
+      <div class="stat-card"><div class="stat-number" id="avgScore">0</div><div class="stat-label">Moyenne</div></div>
       <div class="stat-card"><div class="stat-number" id="bestScore">0</div><div class="stat-label">Meilleur score</div></div>
       <div class="stat-card"><div class="stat-number" id="totalQuizzes">0</div><div class="stat-label">Quiz complétés</div></div>
     </div>
 
-    <div class="import-area" id="importArea">
-      <i class="fas fa-cloud-upload-alt"></i>
-      <p>Cliquez pour importer des scores (fichier JSON)</p>
-      <small style="color: rgba(255,255,255,0.5);">Exportez depuis un autre appareil et importez ici</small>
-    </div>
-    <input type="file" id="importFile" accept=".json" style="display: none;">
-
     <div class="search-bar">
-      <input type="text" id="search" placeholder="Rechercher un participant...">
+      <input type="text" id="search" placeholder="Rechercher...">
       <button id="exportBtn" class="btn"><i class="fas fa-download"></i> Exporter CSV</button>
-      <button id="exportBackupBtn" class="btn"><i class="fas fa-database"></i> Exporter sauvegarde JSON</button>
       <button id="resetBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Tout supprimer</button>
     </div>
 
     <div class="table-container">
       <table>
-        <thead>
-          <tr><th>#</th><th>Nom</th><th>Score</th><th>Temps</th><th>Date</th><th>Action</th></tr>
-        </thead>
+        <thead><tr><th>#</th><th>Nom</th><th>Score</th><th>Temps</th><th>Date</th><th>Action</th></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
@@ -85,11 +69,9 @@
 <script>
 const ADMIN_PASSWORD = "admin123";
 
-// Gestion du stockage local
 function getScores() {
   const stored = localStorage.getItem("quizScores");
-  if (!stored) return [];
-  try { return JSON.parse(stored); } catch(e) { return []; }
+  return stored ? JSON.parse(stored) : [];
 }
 
 function saveScores(scores) {
@@ -98,15 +80,13 @@ function saveScores(scores) {
 }
 
 function formatTime(sec) {
-  if (!sec && sec !== 0) return "--:--";
   return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
 }
 
-function showWarning(msg, isSuccess = false) {
+function showWarning(msg) {
   const warning = document.getElementById("warningMsg");
   warning.textContent = msg;
-  warning.className = "warning show";
-  if (isSuccess) warning.classList.add("success");
+  warning.classList.add("show");
   setTimeout(() => warning.classList.remove("show"), 3000);
 }
 
@@ -143,7 +123,7 @@ function renderTable(scores) {
       if (confirm(`Supprimer ${s.name} ?`)) {
         let newScores = getScores().filter(ss => !(ss.name === s.name && ss.score === s.score && ss.time === s.time));
         saveScores(newScores);
-        showWarning(`✅ ${s.name} supprimé`, true);
+        showWarning(`✅ ${s.name} supprimé`);
       }
     };
     row.insertCell(5).appendChild(btn);
@@ -152,7 +132,7 @@ function renderTable(scores) {
 
 function exportCSV() {
   const scores = getScores();
-  if (!scores.length) { showWarning("Aucune donnée à exporter"); return; }
+  if (!scores.length) { showWarning("Aucune donnée"); return; }
   let csv = "Classement;Nom;Score;Temps(s);Temps formaté;Date\n";
   scores.sort((a,b) => b.score - a.score || a.time - b.time);
   scores.forEach((s, i) => {
@@ -163,49 +143,13 @@ function exportCSV() {
   link.href = URL.createObjectURL(blob);
   link.download = "scores.csv";
   link.click();
-  showWarning("📥 Export CSV réussi !", true);
-}
-
-function exportBackup() {
-  const scores = getScores();
-  const data = JSON.stringify(scores, null, 2);
-  const blob = new Blob([data], {type: "application/json"});
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "quiz_backup.json";
-  link.click();
-  showWarning("💾 Sauvegarde JSON exportée", true);
-}
-
-function importScores(file) {
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (Array.isArray(imported)) {
-        const current = getScores();
-        const merged = [...current];
-        imported.forEach(imp => {
-          const exists = merged.some(m => m.name === imp.name && m.score === imp.score && m.time === imp.time);
-          if (!exists) merged.push(imp);
-        });
-        merged.sort((a,b) => b.score - a.score || a.time - b.time);
-        saveScores(merged);
-        showWarning(`✅ ${imported.length} scores importés !`, true);
-      } else {
-        showWarning("❌ Fichier invalide");
-      }
-    } catch(err) {
-      showWarning("❌ Erreur lecture fichier");
-    }
-  };
-  reader.readAsText(file);
+  showWarning("Export CSV réussi");
 }
 
 function resetAll() {
   if (confirm("⚠️ Supprimer TOUS les scores ?")) {
     saveScores([]);
-    showWarning("✅ Tous les scores ont été supprimés", true);
+    showWarning("✅ Tous les scores supprimés");
   }
 }
 
@@ -215,27 +159,16 @@ function login() {
     document.getElementById("loginPanel").style.display = "none";
     document.getElementById("dashboard").style.display = "block";
     updateDashboard();
-    showWarning("✅ Connecté", true);
+    showWarning("✅ Connecté");
   } else {
     showWarning("❌ Mot de passe incorrect");
   }
 }
 
-// Event listeners
 document.getElementById("loginBtn").onclick = login;
 document.getElementById("exportBtn").onclick = exportCSV;
-document.getElementById("exportBackupBtn").onclick = exportBackup;
 document.getElementById("resetBtn").onclick = resetAll;
 document.getElementById("search").addEventListener("input", () => updateDashboard());
-
-// Import
-const importArea = document.getElementById("importArea");
-const importFile = document.getElementById("importFile");
-importArea.onclick = () => importFile.click();
-importFile.onchange = (e) => {
-  if (e.target.files[0]) importScores(e.target.files[0]);
-  importFile.value = "";
-};
 </script>
 </body>
 </html>

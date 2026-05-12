@@ -6,8 +6,6 @@
   <title>Quiz Génie Civil</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; font-family: 'Inter', sans-serif; }
@@ -17,7 +15,7 @@
     @keyframes fade { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
     .logo-wrapper { text-align: center; margin-bottom: 1rem; }
     .logo-icon { font-size: 3.5rem; color: #FFD700; display: flex; justify-content: center; gap: 1rem; }
-    .logo-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .logo-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-top: 0.5rem; }
     .subtitle { font-size: 0.8rem; color: #FFD700; margin-top: 0.2rem; }
     .conf-name { text-align: center; font-size: 1rem; font-weight: 600; background: linear-gradient(135deg, #FFD966, #FFB347); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 1rem 0; }
     .name-input-group { background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 1.5rem; margin-bottom: 1.5rem; }
@@ -25,6 +23,7 @@
     .name-input-group input { width: 100%; padding: 0.8rem 1rem; border-radius: 1.5rem; border: none; background: white; font-size: 1rem; outline: none; }
     .btn-primary { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 700; border-radius: 2rem; color: #0A1A2F; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.7rem; transition: transform 0.2s; }
     .btn-primary:hover { transform: scale(1.02); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-secondary { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,215,0,0.5); width: 100%; padding: 0.8rem; font-size: 1rem; border-radius: 2rem; color: white; cursor: pointer; margin-top: 0.5rem; }
     .warning-message { background: rgba(220,53,69,0.95); color: white; padding: 0.8rem; border-radius: 1rem; margin-top: 1rem; text-align: center; display: none; }
     .warning-message.show { display: block; animation: shake 0.5s; }
@@ -59,6 +58,10 @@
     .stat-icon { font-size: 1.5rem; }
     .stat-value { font-size: 1.2rem; font-weight: 800; color: #FFD700; }
     .stat-label { font-size: 0.6rem; color: rgba(255,255,255,0.7); }
+    .live-name-display { margin-top: 0.8rem; padding: 0.5rem; border-radius: 1rem; text-align: center; transition: all 0.3s ease; }
+    .live-name-display.show { background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.5); }
+    .live-name-display .prefix { color: #FFD700; font-weight: 600; }
+    .live-name-display .name { color: white; font-weight: 700; font-size: 1.1rem; }
     .admin-link { text-align: center; margin-top: 15px; font-size: 0.8rem; }
     .admin-link a { color: #FFD700; text-decoration: none; opacity: 0.7; }
     @media (max-width: 550px) { .app-container { padding: 1rem; } .question-text { font-size: 1rem; } }
@@ -69,7 +72,7 @@
   <div id="homeScreen" class="screen active">
     <div class="logo-wrapper">
         <!-- ZONE LOGO - Remplacez l'image par votre logo -->
-        <img src="img/logo.png" alt="Club Génie Civil" class="logo-img" id="clubLogo" width="200" height="150">
+        <img src="../image/Logo.jpeg" alt="Club Génie Civil" class="logo-img" id="clubLogo" width="250" height="150">
         <!-- Version texte de secours -->
         <div class="logo-text">CLUB GÉNIE CIVIL</div>
         <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
@@ -77,15 +80,15 @@
     <h2 class="conf-name">Conférence Les perspectives de l'intelligence artificielle dans le Génie Civil</h2>
     <div class="name-input-group">
       <label>📝 Votre nom</label>
-      <input type="text" id="username" placeholder="Entrez votre nom complet">
+      <input type="text" id="username" placeholder="Entrez votre nom complet" autocomplete="off">
+      <div id="liveNameDisplay" class="live-name-display"></div>
     </div>
-    <button class="btn-primary" id="startQuizBtn">🎮 Commencer le Quiz</button>
+    <button class="btn-primary" id="startQuizBtn" disabled>🎮 Commencer le Quiz</button>
     <div id="warningMessage" class="warning-message"></div>
     <div class="leaderboard-preview">
       <h3>🏆 Meilleurs scores</h3>
       <div id="leaderboardPreviewList">Chargement...</div>
     </div>
-    
     <div class="admin-link">
       <a href="admin.html">🔒 Administration</a>
     </div>
@@ -131,20 +134,7 @@
 </div>
 
 <script>
-// ========== FIREBASE ==========
-const firebaseConfig = {
-  apiKey: "AIzaSyAOiTRI3aLoSnl2IuUP5L6vhnsZX0mgCmA",
-  authDomain: "quiz-gc-5bf89.firebaseapp.com",
-  projectId: "quiz-gc-5bf89",
-  storageBucket: "quiz-gc-5bf89.firebasestorage.app",
-  messagingSenderId: "564040843180",
-  appId: "1:564040843180:web:f82350a9980a3d733f4409"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// ========== QUESTIONS ==========
+// ========== DONNEES DU QUIZ ==========
 const QUIZ_DATA = [
   { text: "Quelle est la principale fonction d'un chaînage dans une maçonnerie ?", options: ["Assurer l'esthétique", "Relier les murs et répartir les efforts", "Protéger contre l'humidité", "Augmenter la hauteur"], correct: 1 },
   { text: "Sur un chantier, que signifie EP sur un plan ?", options: ["Égout Pluvial", "Équipement Principal", "Espace de Parking", "Énergie Photovoltaïque"], correct: 0 },
@@ -180,7 +170,7 @@ const alreadyPlayedHomeBtn = document.getElementById("alreadyPlayedHomeBtn");
 const usernameInput = document.getElementById("username");
 const warningMessage = document.getElementById("warningMessage");
 
-// ========== FONCTIONS FIREBASE ==========
+// ========== STOCKAGE LOCAL ==========
 function getDeviceId() {
   let id = localStorage.getItem("deviceId");
   if (!id) {
@@ -190,54 +180,52 @@ function getDeviceId() {
   return id;
 }
 
-async function getScores() {
-  try {
-    const snapshot = await db.collection("scores").get();
-    const scores = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      scores.push({ name: data.name, score: data.score, time: data.time, date: data.date });
-    });
-    scores.sort((a,b) => {
-      if (a.score !== b.score) return b.score - a.score;
-      return a.time - b.time;
-    });
-    return scores;
-  } catch (error) {
-    console.error("Erreur Firebase:", error);
-    return [];
-  }
+function getScores() {
+  const stored = localStorage.getItem("quizScores");
+  if (!stored) return [];
+  try { return JSON.parse(stored); } catch(e) { return []; }
 }
 
-async function saveScoreToFirebase(name, score, time, deviceId) {
-  try {
-    await db.collection("scores").add({
-      name: name,
-      score: score,
-      time: time,
-      deviceId: deviceId,
-      date: new Date().toISOString()
-    });
-    console.log("Score sauvegardé!");
+function saveScore(name, score, time, deviceId) {
+  const scores = getScores();
+  const existing = scores.find(s => s.deviceId === deviceId);
+  if (!existing) {
+    scores.push({ name, score, time, deviceId, date: Date.now() });
+    scores.sort((a,b) => b.score - a.score || a.time - b.time);
+    localStorage.setItem("quizScores", JSON.stringify(scores));
     return true;
-  } catch (error) {
-    console.error("Erreur sauvegarde:", error);
-    return false;
   }
+  return false;
 }
 
-async function checkAlreadyPlayed(deviceId) {
-  try {
-    const snapshot = await db.collection("scores").where("deviceId", "==", deviceId).get();
-    return !snapshot.empty;
-  } catch (error) {
-    console.error("Erreur vérification:", error);
-    return false;
-  }
+function checkAlreadyPlayed(deviceId) {
+  const scores = getScores();
+  return scores.some(s => s.deviceId === deviceId);
 }
 
-async function updateLeaderboards() {
-  const scores = await getScores();
+function formatTime(sec) {
+  return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+}
+
+function showWarning(msg) {
+  warningMessage.textContent = msg;
+  warningMessage.classList.add("show");
+  setTimeout(() => warningMessage.classList.remove("show"), 3000);
+}
+
+function showScreen(screenName) {
+  homeScreen.classList.remove("active");
+  quizScreen.classList.remove("active");
+  resultScreen.classList.remove("active");
+  alreadyPlayedScreen.classList.remove("active");
+  if (screenName === "home") homeScreen.classList.add("active");
+  else if (screenName === "quiz") quizScreen.classList.add("active");
+  else if (screenName === "result") resultScreen.classList.add("active");
+  else if (screenName === "alreadyPlayed") alreadyPlayedScreen.classList.add("active");
+}
+
+function updateLeaderboards() {
+  const scores = getScores();
   const previewDiv = document.getElementById("leaderboardPreviewList");
   const fullDiv = document.getElementById("fullLeaderboard");
   
@@ -268,26 +256,31 @@ async function updateLeaderboards() {
   }
 }
 
-function formatTime(sec) {
-  return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+// ========== AFFICHAGE NOM EN TEMPS RÉEL ==========
+const liveDisplay = document.getElementById("liveNameDisplay");
+const nameField = document.getElementById("username");
+const startButton = document.getElementById("startQuizBtn");
+
+function updateLiveNameDisplay() {
+  const name = nameField.value.trim();
+  if (name !== "") {
+    liveDisplay.innerHTML = `<span class="prefix">👤 Participant :</span> <span class="name">${escapeHtml(name)}</span>`;
+    liveDisplay.classList.add("show");
+    startButton.disabled = false;
+  } else {
+    liveDisplay.innerHTML = "";
+    liveDisplay.classList.remove("show");
+    startButton.disabled = true;
+  }
 }
 
-function showWarning(msg) {
-  warningMessage.textContent = msg;
-  warningMessage.classList.add("show");
-  setTimeout(() => warningMessage.classList.remove("show"), 3000);
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-function showScreen(screenName) {
-  homeScreen.classList.remove("active");
-  quizScreen.classList.remove("active");
-  resultScreen.classList.remove("active");
-  alreadyPlayedScreen.classList.remove("active");
-  if (screenName === "home") homeScreen.classList.add("active");
-  else if (screenName === "quiz") quizScreen.classList.add("active");
-  else if (screenName === "result") resultScreen.classList.add("active");
-  else if (screenName === "alreadyPlayed") alreadyPlayedScreen.classList.add("active");
-}
+nameField.addEventListener("input", updateLiveNameDisplay);
 
 // ========== QUIZ ==========
 function shuffleQuestions() {
@@ -355,31 +348,19 @@ function loadQuestion() {
   document.getElementById("progressFill").style.width = `${currentQuestionIndex / TOTAL_QS * 100}%`;
 }
 
-// ========== FONCTION CORRIGÉE ==========
 function nextQuestion() {
   if (!quizActive) return;
-  
-  // Si c'est la dernière question, terminer le quiz
   if (currentQuestionIndex + 1 >= TOTAL_QS) {
     finishQuiz();
     return;
   }
-  
-  // Sinon, passer à la question suivante
   const card = document.querySelector(".quiz-card");
-  if (card) { 
-    card.style.transform = "scale(0.98)"; 
-    card.style.opacity = "0.7"; 
-  }
-  
+  if (card) { card.style.transform = "scale(0.98)"; card.style.opacity = "0.7"; }
   setTimeout(() => {
     currentQuestionIndex++;
     waitingForTransition = false;
     loadQuestion();
-    if (card) { 
-      card.style.transform = "scale(1)"; 
-      card.style.opacity = "1"; 
-    }
+    if (card) { card.style.transform = "scale(1)"; card.style.opacity = "1"; }
   }, 150);
 }
 
@@ -401,7 +382,7 @@ function launchCelebration(score) {
   setTimeout(() => container.remove(), 5000);
 }
 
-async function finishQuiz() {
+function finishQuiz() {
   quizActive = false;
   waitingForTransition = false;
   stopTimer();
@@ -414,29 +395,30 @@ async function finishQuiz() {
   document.getElementById("finalTime").textContent = formatTime(quizTimerSeconds);
   
   if (score === TOTAL_QS) {
-    document.getElementById("resultMessage").textContent = "🏆 Parfait !";
-    document.getElementById("congratsMsg").textContent = "🏆 Score Parfait";
+    document.getElementById("resultMessage").textContent = "🏆 Parfait ! Vous êtes un expert !";
+    document.getElementById("congratsMsg").textContent = "🏆 Score Parfait 🏆";
   } else if (score >= 7) {
-    document.getElementById("resultMessage").textContent = "🎉 Bravo !";
-    document.getElementById("congratsMsg").textContent = "🎉 Excellent";
+    document.getElementById("resultMessage").textContent = "🎉 Bravo ! Solides connaissances !";
+    document.getElementById("congratsMsg").textContent = "🎉 Excellent !";
   } else if (score >= 5) {
     document.getElementById("resultMessage").textContent = "👍 Bien joué !";
-    document.getElementById("congratsMsg").textContent = "👍 Bien joué";
+    document.getElementById("congratsMsg").textContent = "👍 Bien joué !";
   } else {
     document.getElementById("resultMessage").textContent = "📚 Continuez à apprendre !";
-    document.getElementById("congratsMsg").textContent = "📚 Merci";
+    document.getElementById("congratsMsg").textContent = "📚 Merci !";
   }
   
   if (score >= 7) launchCelebration(score);
   
   const deviceId = getDeviceId();
-  await saveScoreToFirebase(currentUserName, score, quizTimerSeconds, deviceId);
-  await updateLeaderboards();
+  const userName = currentUserName.trim();
+  saveScore(userName, score, quizTimerSeconds, deviceId);
+  updateLeaderboards();
   
-  const scores = await getScores();
+  const scores = getScores();
   let rank = 1;
   for (let i = 0; i < scores.length; i++) {
-    if (scores[i].name === currentUserName && scores[i].score === score && scores[i].time === quizTimerSeconds) {
+    if (scores[i].name === userName && scores[i].score === score && scores[i].time === quizTimerSeconds) {
       rank = i + 1;
       break;
     }
@@ -451,30 +433,20 @@ async function finishQuiz() {
     if (scoreBox) scoreBox.insertAdjacentElement('afterend', statsDiv);
   }
   statsDiv.innerHTML = `
-    <div class="stats-header">📊 Statistiques</div>
+    <div class="stats-header">📊 Statistiques détaillées</div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value">${(score/TOTAL_QS*100).toFixed(1)}%</div><div class="stat-label">Précision</div></div>
-      <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-value">${(quizTimerSeconds/TOTAL_QS).toFixed(1)} sec</div><div class="stat-label">Temps/question</div></div>
-      <div class="stat-card"><div class="stat-icon">🏅</div><div class="stat-value">#${rank}</div><div class="stat-label">Classement</div></div>
+      <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-value">${(quizTimerSeconds/TOTAL_QS).toFixed(1)} sec</div><div class="stat-label">Temps moyen/question</div></div>
+      <div class="stat-card"><div class="stat-icon">🏅</div><div class="stat-value">#${rank}</div><div class="stat-label">Classement final</div></div>
     </div>
   `;
   
   showScreen("result");
 }
 
-// Sauvegarde locale en plus de Firebase
-function saveScoreLocal(name, score, time, deviceId) {
-  let scores = JSON.parse(localStorage.getItem("quizScores") || "[]");
-  const existing = scores.find(s => s.deviceId === deviceId);
-  if (!existing) {
-    scores.push({ name, score, time, deviceId, date: new Date().toISOString() });
-    localStorage.setItem("quizScores", JSON.stringify(scores));
-  }
-}
-
-async function startQuiz() {
+function startQuiz() {
   const deviceId = getDeviceId();
-  const alreadyPlayed = await checkAlreadyPlayed(deviceId);
+  const alreadyPlayed = checkAlreadyPlayed(deviceId);
   if (alreadyPlayed) {
     document.getElementById("previousScoreInfo").innerHTML = "🔒 Cet appareil a déjà participé !";
     showScreen("alreadyPlayed");
