@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Quiz Génie Civil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; font-family: 'Inter', sans-serif; }
+    .app-container { max-width: 750px; width: 100%; background: rgba(10, 26, 47, 0.6); backdrop-filter: blur(14px); border-radius: 2rem; padding: 1.5rem; border: 1px solid rgba(255, 215, 0, 0.25); }
+    .screen { display: none; animation: fade 0.4s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+    .logo-wrapper { text-align: center; margin-bottom: 1rem; }
+    .logo-icon { font-size: 3.5rem; color: #FFD700; display: flex; justify-content: center; gap: 1rem; }
+    .logo-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .subtitle { font-size: 0.8rem; color: #FFD700; margin-top: 0.2rem; }
+    .conf-name { text-align: center; font-size: 1rem; font-weight: 600; background: linear-gradient(135deg, #FFD966, #FFB347); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 1rem 0; }
+    .name-input-group { background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 1.5rem; margin-bottom: 1.5rem; }
+    .name-input-group label { display: block; color: #FFD700; font-weight: 600; margin-bottom: 0.5rem; }
+    .name-input-group input { width: 100%; padding: 0.8rem 1rem; border-radius: 1.5rem; border: none; background: white; font-size: 1rem; outline: none; }
+    .btn-primary { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 700; border-radius: 2rem; color: #0A1A2F; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.7rem; transition: transform 0.2s; }
+    .btn-primary:hover { transform: scale(1.02); }
+    .btn-secondary { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,215,0,0.5); width: 100%; padding: 0.8rem; font-size: 1rem; border-radius: 2rem; color: white; cursor: pointer; margin-top: 0.5rem; }
+    .warning-message { background: rgba(220,53,69,0.95); color: white; padding: 0.8rem; border-radius: 1rem; margin-top: 1rem; text-align: center; display: none; }
+    .warning-message.show { display: block; animation: shake 0.5s; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    .leaderboard-preview, .leaderboard-full { background: rgba(0,0,0,0.35); border-radius: 1.5rem; padding: 1rem; margin-top: 1.5rem; }
+    .leaderboard-preview h3, .leaderboard-full h3 { color: #FFD700; font-size: 1rem; margin-bottom: 0.8rem; }
+    .score-row { display: flex; justify-content: space-between; background: rgba(255,255,240,0.1); padding: 0.5rem 0.8rem; border-radius: 1.5rem; margin-bottom: 0.5rem; border-left: 3px solid #FFD700; color: white; font-size: 0.9rem; }
+    .quiz-header { margin-bottom: 1.2rem; }
+    .quiz-meta { display: flex; justify-content: space-between; margin-bottom: 0.8rem; color: white; font-size: 0.85rem; }
+    .question-counter, .quiz-timer { background: rgba(0,0,0,0.4); padding: 0.3rem 0.8rem; border-radius: 1.5rem; }
+    .progress-bar-container { background: rgba(255,255,255,0.2); border-radius: 20px; height: 8px; overflow: hidden; }
+    .progress-fill { background: linear-gradient(90deg, #FFD700, #FFB347); width: 0%; height: 100%; transition: width 0.3s; }
+    .quiz-card { background: rgba(15,42,64,0.75); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid rgba(255,215,0,0.4); }
+    .question-text { color: white; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .answers-list { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1rem; }
+    .answer-option { background: rgba(255,255,245,0.08); border: 1px solid rgba(255,215,0,0.3); border-radius: 2rem; padding: 0.7rem 1rem; cursor: pointer; color: #f0f0f0; display: flex; align-items: center; gap: 0.8rem; transition: all 0.2s; }
+    .answer-option:hover { background: rgba(255,215,0,0.2); transform: translateX(5px); }
+    .prefix-letter { font-weight: 800; background: #FFD700; color: #0A1A2F; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .result-card { text-align: center; }
+    .congrats-icon, .already-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .score-box { background: rgba(0,0,0,0.5); border-radius: 1.5rem; padding: 1rem; margin: 1rem 0; }
+    .score-main { font-size: 2rem; font-weight: 800; color: #FFD700; }
+    .time-spent { color: white; margin-top: 0.5rem; }
+    .result-message { margin-bottom: 1rem; color: #FFD700; }
+    .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+    .confetti { position: absolute; width: 10px; height: 10px; opacity: 0.8; animation: confetti-fall 3s ease-out forwards; }
+    @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+    .stats-container { background: rgba(0,0,0,0.4); border-radius: 1.5rem; padding: 1rem; margin: 1rem 0; }
+    .stats-header { font-size: 0.9rem; font-weight: 700; color: #FFD700; text-align: center; margin-bottom: 0.8rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .stat-card { text-align: center; padding: 0.5rem; background: rgba(255,255,255,0.08); border-radius: 1rem; }
+    .stat-icon { font-size: 1.5rem; }
+    .stat-value { font-size: 1.2rem; font-weight: 800; color: #FFD700; }
+    .stat-label { font-size: 0.6rem; color: rgba(255,255,255,0.7); }
+    .admin-link { text-align: center; margin-top: 15px; font-size: 0.8rem; }
+    .admin-link a { color: #FFD700; text-decoration: none; opacity: 0.7; }
+    @media (max-width: 550px) { .app-container { padding: 1rem; } .question-text { font-size: 1rem; } }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div id="homeScreen" class="screen active">
+    <div class="logo-wrapper">
+        <!-- ZONE LOGO - Remplacez l'image par votre logo -->
+        <img src="../image/Logo.jpeg" alt="Club Génie Civil" class="logo-img" id="clubLogo" width="200" height="150">
+        <!-- Version texte de secours -->
+        <div class="logo-text">CLUB GÉNIE CIVIL</div>
+        <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
+    </div>
+    <h2 class="conf-name">Conférence Les perspectives de l'intelligence artificielle dans le Génie Civil</h2>
+    <div class="name-input-group">
+      <label>📝 Votre nom</label>
+      <input type="text" id="username" placeholder="Entrez votre nom complet">
+    </div>
+    <button class="btn-primary" id="startQuizBtn">🎮 Commencer le Quiz</button>
+    <div id="warningMessage" class="warning-message"></div>
+    <div class="leaderboard-preview">
+      <h3>🏆 Meilleurs scores</h3>
+      <div id="leaderboardPreviewList">Chargement...</div>
+    </div>
+    
+    <div class="admin-link">
+      <a href="admin.html">🔒 Administration</a>
+    </div>
+  </div>
+
+  <div id="quizScreen" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="question-counter">Question <span id="currentQ">1</span>/<span id="totalQ">10</span></span>
+        <span class="quiz-timer">⏱️ <span id="timerDisplay">00:00</span></span>
+      </div>
+      <div class="progress-bar-container"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="quiz-card">
+      <h3 class="question-text" id="questionText">Chargement...</h3>
+      <div class="answers-list" id="answersList"></div>
+    </div>
+  </div>
+
+  <div id="resultScreen" class="screen">
+    <div class="result-card">
+      <div class="congrats-icon">🏆</div>
+      <h2 id="congratsMsg">Félicitations !</h2>
+      <div class="score-box">
+        <div class="score-main"><span id="finalScore">0</span>/<span id="totalQuestions">10</span></div>
+        <div class="time-spent">⏱️ Temps : <span id="finalTime">00:00</span></div>
+      </div>
+      <div class="result-message" id="resultMessage"></div>
+      <div class="leaderboard-full"><h3>📊 Classement complet</h3><div id="fullLeaderboard"></div></div>
+      <button class="btn-secondary" id="homeBtn">🏠 Retour à l'Accueil</button>
+    </div>
+  </div>
+
+  <div id="alreadyPlayedScreen" class="screen">
+    <div class="result-card">
+      <div class="already-icon">⚠️</div>
+      <h2 style="color:#FFD700;">Participation unique !</h2>
+      <div class="score-box"><div class="score-main">Quiz déjà complété</div></div>
+      <div id="previousScoreInfo" style="color:#FFD700;"></div>
+      <button class="btn-primary" id="alreadyPlayedHomeBtn">🏠 Retour Accueil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyAOiTRI3aLoSnl2IuUP5L6vhnsZX0mgCmA",
+  authDomain: "quiz-gc-5bf89.firebaseapp.com",
+  projectId: "quiz-gc-5bf89",
+  storageBucket: "quiz-gc-5bf89.firebasestorage.app",
+  messagingSenderId: "564040843180",
+  appId: "1:564040843180:web:f82350a9980a3d733f4409"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ========== QUESTIONS ==========
+const QUIZ_DATA = [
+  { text: "Quelle est la principale fonction d'un chaînage dans une maçonnerie ?", options: ["Assurer l'esthétique", "Relier les murs et répartir les efforts", "Protéger contre l'humidité", "Augmenter la hauteur"], correct: 1 },
+  { text: "Sur un chantier, que signifie EP sur un plan ?", options: ["Égout Pluvial", "Équipement Principal", "Espace de Parking", "Énergie Photovoltaïque"], correct: 0 },
+  { text: "Quel sol présente le risque de retrait-gonflement le plus important ?", options: ["Sable dense", "Argile plastique", "Grave calcaire", "Roche saine"], correct: 1 },
+  { text: "Norme européenne pour les structures en béton armé ?", options: ["Eurocode 1", "Eurocode 2", "Eurocode 5", "Eurocode 7"], correct: 1 },
+  { text: "La flèche instantanée d'une poutre est due à :", options: ["La fissuration", "La déformation élastique", "Le fluage", "Le retrait"], correct: 1 },
+  { text: "Le coefficient de foisonnement sert à :", options: ["Calculer les matériaux compactés", "Estimer l'augmentation de volume", "Déterminer la portance", "Calculer la pente"], correct: 1 },
+  { text: "Approche la plus défavorable selon Eurocode 7 ?", options: ["Combinaison 1", "Combinaison 2", "Combinaison 3", "Combinaison 4"], correct: 1 },
+  { text: "Le facteur de comportement q permet de :", options: ["Augmenter la période", "Réduire les efforts sismiques", "Calculer la masse", "Déterminer l'amortissement"], correct: 1 },
+  { text: "Shear-lag affecte principalement :", options: ["Contraintes de compression", "Flambement local", "Fluage", "Fissuration"], correct: 0 },
+  { text: "Phi-c reduction est utilisée pour :", options: ["Portance fondation", "Coefficient de sécurité talus", "Tassement consolidé", "Écrans soutènement"], correct: 1 }
+];
+
+const TOTAL_QS = QUIZ_DATA.length;
+let randomizedQuestions = [];
+let currentQuestionIndex = 0;
+let userAnswers = new Array(TOTAL_QS).fill(null);
+let quizActive = false;
+let timerInterval = null;
+let startTime = null;
+let currentUserName = "";
+let quizTimerSeconds = 0;
+let waitingForTransition = false;
+
+// DOM elements
+const homeScreen = document.getElementById("homeScreen");
+const quizScreen = document.getElementById("quizScreen");
+const resultScreen = document.getElementById("resultScreen");
+const alreadyPlayedScreen = document.getElementById("alreadyPlayedScreen");
+const startBtn = document.getElementById("startQuizBtn");
+const homeBtn = document.getElementById("homeBtn");
+const alreadyPlayedHomeBtn = document.getElementById("alreadyPlayedHomeBtn");
+const usernameInput = document.getElementById("username");
+const warningMessage = document.getElementById("warningMessage");
+
+// ========== FONCTIONS FIREBASE ==========
+function getDeviceId() {
+  let id = localStorage.getItem("deviceId");
+  if (!id) {
+    id = "dev_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("deviceId", id);
+  }
+  return id;
+}
+
+async function getScores() {
+  try {
+    const snapshot = await db.collection("scores").get();
+    const scores = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      scores.push({ name: data.name, score: data.score, time: data.time, date: data.date });
+    });
+    scores.sort((a,b) => {
+      if (a.score !== b.score) return b.score - a.score;
+      return a.time - b.time;
+    });
+    return scores;
+  } catch (error) {
+    console.error("Erreur Firebase:", error);
+    return [];
+  }
+}
+
+async function saveScoreToFirebase(name, score, time, deviceId) {
+  try {
+    await db.collection("scores").add({
+      name: name,
+      score: score,
+      time: time,
+      deviceId: deviceId,
+      date: new Date().toISOString()
+    });
+    console.log("Score sauvegardé!");
+    return true;
+  } catch (error) {
+    console.error("Erreur sauvegarde:", error);
+    return false;
+  }
+}
+
+async function checkAlreadyPlayed(deviceId) {
+  try {
+    const snapshot = await db.collection("scores").where("deviceId", "==", deviceId).get();
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("Erreur vérification:", error);
+    return false;
+  }
+}
+
+async function updateLeaderboards() {
+  const scores = await getScores();
+  const previewDiv = document.getElementById("leaderboardPreviewList");
+  const fullDiv = document.getElementById("fullLeaderboard");
+  
+  if (previewDiv) {
+    if (scores.length === 0) previewDiv.innerHTML = "Aucun score pour l'instant";
+    else {
+      let html = "";
+      for (let i = 0; i < Math.min(3, scores.length); i++) {
+        const s = scores[i];
+        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "📌";
+        html += `<div class="score-row"><span>${medal} ${s.name.substring(0, 18)}</span><span><strong>${s.score}/${TOTAL_QS}</strong> ${formatTime(s.time)}</span></div>`;
+      }
+      if (scores.length > 3) html += `<div style="text-align:center; margin-top:8px;">+ ${scores.length-3} autres</div>`;
+      previewDiv.innerHTML = html;
+    }
+  }
+  
+  if (fullDiv) {
+    if (scores.length === 0) fullDiv.innerHTML = "<div class='score-row'>Aucun score</div>";
+    else {
+      let html = "";
+      for (let i = 0; i < scores.length; i++) {
+        const s = scores[i];
+        html += `<div class="score-row"><span>${i+1}. ${s.name.substring(0, 18)}</span><span><strong>${s.score}/${TOTAL_QS}</strong> ${formatTime(s.time)}</span></div>`;
+      }
+      fullDiv.innerHTML = html;
+    }
+  }
+}
+
+function formatTime(sec) {
+  return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+}
+
+function showWarning(msg) {
+  warningMessage.textContent = msg;
+  warningMessage.classList.add("show");
+  setTimeout(() => warningMessage.classList.remove("show"), 3000);
+}
+
+function showScreen(screenName) {
+  homeScreen.classList.remove("active");
+  quizScreen.classList.remove("active");
+  resultScreen.classList.remove("active");
+  alreadyPlayedScreen.classList.remove("active");
+  if (screenName === "home") homeScreen.classList.add("active");
+  else if (screenName === "quiz") quizScreen.classList.add("active");
+  else if (screenName === "result") resultScreen.classList.add("active");
+  else if (screenName === "alreadyPlayed") alreadyPlayedScreen.classList.add("active");
+}
+
+// ========== QUIZ ==========
+function shuffleQuestions() {
+  randomizedQuestions = [...QUIZ_DATA];
+  for (let i = randomizedQuestions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [randomizedQuestions[i], randomizedQuestions[j]] = [randomizedQuestions[j], randomizedQuestions[i]];
+  }
+}
+
+function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+function startTimer() {
+  stopTimer();
+  startTime = Date.now() - quizTimerSeconds * 1000;
+  timerInterval = setInterval(() => {
+    if (!quizActive) return;
+    quizTimerSeconds = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById("timerDisplay").textContent = formatTime(quizTimerSeconds);
+  }, 1000);
+}
+
+function resetQuiz() {
+  currentQuestionIndex = 0;
+  userAnswers.fill(null);
+  quizTimerSeconds = 0;
+  document.getElementById("timerDisplay").textContent = "00:00";
+  stopTimer();
+  quizActive = false;
+  waitingForTransition = false;
+}
+
+function loadQuestion() {
+  if (!quizActive) return;
+  const q = randomizedQuestions[currentQuestionIndex];
+  document.getElementById("questionText").textContent = q.text;
+  const container = document.getElementById("answersList");
+  container.innerHTML = "";
+  const letters = ["A", "B", "C", "D"];
+  q.options.forEach((opt, idx) => {
+    const div = document.createElement("div");
+    div.className = "answer-option";
+    div.innerHTML = `<span class="prefix-letter">${letters[idx]}</span><span>${opt}</span>`;
+    div.dataset.index = idx;
+    div.onclick = () => {
+      if (!quizActive || waitingForTransition) return;
+      const isCorrect = idx === q.correct;
+      userAnswers[currentQuestionIndex] = idx;
+      document.querySelectorAll(".answer-option").forEach(opt => {
+        const i = parseInt(opt.dataset.index);
+        if (i === q.correct) opt.style.background = "rgba(40,167,69,0.85)";
+        if (i === idx && i !== q.correct) opt.style.background = "rgba(220,53,69,0.85)";
+        opt.style.pointerEvents = "none";
+      });
+      const fb = document.createElement("div");
+      fb.style.cssText = `position:fixed; bottom:30px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:50px; color:white; font-weight:bold; background:${isCorrect ? "rgba(40,167,69,0.9)" : "rgba(220,53,69,0.9)"}; z-index:1000`;
+      fb.textContent = isCorrect ? "✓ Bonne réponse !" : `✗ Mauvaise réponse. La bonne était : ${letters[q.correct]} - ${q.options[q.correct]}`;
+      document.body.appendChild(fb);
+      waitingForTransition = true;
+      setTimeout(() => { fb.remove(); nextQuestion(); }, 1200);
+    };
+    container.appendChild(div);
+  });
+  document.getElementById("currentQ").textContent = currentQuestionIndex + 1;
+  document.getElementById("totalQ").textContent = TOTAL_QS;
+  document.getElementById("progressFill").style.width = `${currentQuestionIndex / TOTAL_QS * 100}%`;
+}
+
+// ========== FONCTION CORRIGÉE ==========
+function nextQuestion() {
+  if (!quizActive) return;
+  
+  // Si c'est la dernière question, terminer le quiz
+  if (currentQuestionIndex + 1 >= TOTAL_QS) {
+    finishQuiz();
+    return;
+  }
+  
+  // Sinon, passer à la question suivante
+  const card = document.querySelector(".quiz-card");
+  if (card) { 
+    card.style.transform = "scale(0.98)"; 
+    card.style.opacity = "0.7"; 
+  }
+  
+  setTimeout(() => {
+    currentQuestionIndex++;
+    waitingForTransition = false;
+    loadQuestion();
+    if (card) { 
+      card.style.transform = "scale(1)"; 
+      card.style.opacity = "1"; 
+    }
+  }, 150);
+}
+
+function launchCelebration(score) {
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+  const colors = ['#FFD700', '#FFA500', '#FFC107', '#FFB347', '#FFD966'];
+  for (let i = 0; i < 150; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      container.appendChild(c);
+      setTimeout(() => c.remove(), 3500);
+    }, i * 20);
+  }
+  setTimeout(() => container.remove(), 5000);
+}
+
+async function finishQuiz() {
+  quizActive = false;
+  waitingForTransition = false;
+  stopTimer();
+  
+  let score = 0;
+  for (let i = 0; i < TOTAL_QS; i++) {
+    if (userAnswers[i] === randomizedQuestions[i].correct) score++;
+  }
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("finalTime").textContent = formatTime(quizTimerSeconds);
+  
+  if (score === TOTAL_QS) {
+    document.getElementById("resultMessage").textContent = "🏆 Parfait !";
+    document.getElementById("congratsMsg").textContent = "🏆 Score Parfait";
+  } else if (score >= 7) {
+    document.getElementById("resultMessage").textContent = "🎉 Bravo !";
+    document.getElementById("congratsMsg").textContent = "🎉 Excellent";
+  } else if (score >= 5) {
+    document.getElementById("resultMessage").textContent = "👍 Bien joué !";
+    document.getElementById("congratsMsg").textContent = "👍 Bien joué";
+  } else {
+    document.getElementById("resultMessage").textContent = "📚 Continuez à apprendre !";
+    document.getElementById("congratsMsg").textContent = "📚 Merci";
+  }
+  
+  if (score >= 7) launchCelebration(score);
+  
+  const deviceId = getDeviceId();
+  await saveScoreToFirebase(currentUserName, score, quizTimerSeconds, deviceId);
+  await updateLeaderboards();
+  
+  const scores = await getScores();
+  let rank = 1;
+  for (let i = 0; i < scores.length; i++) {
+    if (scores[i].name === currentUserName && scores[i].score === score && scores[i].time === quizTimerSeconds) {
+      rank = i + 1;
+      break;
+    }
+  }
+  
+  let statsDiv = document.getElementById("statsContainer");
+  if (!statsDiv) {
+    statsDiv = document.createElement("div");
+    statsDiv.id = "statsContainer";
+    statsDiv.className = "stats-container";
+    const scoreBox = document.querySelector("#resultScreen .score-box");
+    if (scoreBox) scoreBox.insertAdjacentElement('afterend', statsDiv);
+  }
+  statsDiv.innerHTML = `
+    <div class="stats-header">📊 Statistiques</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value">${(score/TOTAL_QS*100).toFixed(1)}%</div><div class="stat-label">Précision</div></div>
+      <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-value">${(quizTimerSeconds/TOTAL_QS).toFixed(1)} sec</div><div class="stat-label">Temps/question</div></div>
+      <div class="stat-card"><div class="stat-icon">🏅</div><div class="stat-value">#${rank}</div><div class="stat-label">Classement</div></div>
+    </div>
+  `;
+  
+  showScreen("result");
+}
+
+async function startQuiz() {
+  const deviceId = getDeviceId();
+  const alreadyPlayed = await checkAlreadyPlayed(deviceId);
+  if (alreadyPlayed) {
+    document.getElementById("previousScoreInfo").innerHTML = "🔒 Cet appareil a déjà participé !";
+    showScreen("alreadyPlayed");
+    return;
+  }
+  const name = usernameInput.value.trim();
+  if (name === "") { showWarning("Veuillez entrer votre nom"); return; }
+  currentUserName = name;
+  shuffleQuestions();
+  resetQuiz();
+  quizActive = true;
+  startTimer();
+  loadQuestion();
+  showScreen("quiz");
+}
+
+function backToHome() {
+  resetQuiz();
+  usernameInput.value = "";
+  showScreen("home");
+  updateLeaderboards();
+}
+
+// Event listeners
+startBtn.onclick = startQuiz;
+homeBtn.onclick = backToHome;
+alreadyPlayedHomeBtn.onclick = backToHome;
+
+// INIT
+document.getElementById("totalQ").textContent = TOTAL_QS;
+document.getElementById("totalQuestions").textContent = TOTAL_QS;
+updateLeaderboards();
+showScreen("home");
+</script>
+</body>
+</html>

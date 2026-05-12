@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Quiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); font-family: 'Inter', sans-serif; padding: 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; background: rgba(10,26,47,0.6); backdrop-filter: blur(14px); border-radius: 2rem; padding: 2rem; }
+    h1 { color: #FFD700; margin-bottom: 2rem; }
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: rgba(0,0,0,0.3); border-radius: 1rem; padding: 1rem; text-align: center; }
+    .stat-number { font-size: 2rem; font-weight: bold; color: #FFD700; }
+    table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.3); border-radius: 1rem; }
+    th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); color: white; }
+    th { color: #FFD700; }
+    .delete-btn { background: #dc3545; border: none; color: white; padding: 0.3rem 0.8rem; border-radius: 0.5rem; cursor: pointer; }
+    .btn { background: #FFD700; border: none; padding: 0.5rem 1rem; border-radius: 1rem; cursor: pointer; margin-right: 1rem; margin-top: 1rem; color: #0A1A2F; font-weight: bold; }
+    .btn-danger { background: #dc3545; color: white; }
+    .login-box { max-width: 400px; margin: 100px auto; text-align: center; }
+    .login-box input { width: 100%; padding: 1rem; border-radius: 2rem; border: none; margin: 1rem 0; }
+    .search-input { padding: 0.5rem; border-radius: 1rem; border: none; width: 250px; margin-right: 1rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1><i class="fas fa-user-shield"></i> Administration</h1>
+  
+  <div id="loginPanel" class="login-box">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button class="btn" id="loginBtn">Se connecter</button>
+  </div>
+  
+  <div id="dashboard" style="display:none">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div>Participants</div></div>
+      <div class="stat-card"><div class="stat-number" id="avgScore">0</div><div>Moyenne</div></div>
+      <div class="stat-card"><div class="stat-number" id="bestScore">0</div><div>Meilleur score</div></div>
+      <div class="stat-card"><div class="stat-number" id="totalQuizzes">0</div><div>Quiz complétés</div></div>
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+      <input type="text" id="search" class="search-input" placeholder="Rechercher un participant...">
+      <button class="btn" id="exportBtn"><i class="fas fa-download"></i> Exporter CSV</button>
+      <button class="btn btn-danger" id="resetBtn"><i class="fas fa-trash"></i> Tout réinitialiser</button>
+    </div>
+    
+    <div style="overflow-x: auto;">
+      <table id="scoresTable">
+        <thead><tr><th>#</th><th>Nom</th><th>Score</th><th>Temps</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyAOiTRI3aLoSnl2IuUP5L6vhnsZX0mgCmA",
+  authDomain: "quiz-gc-5bf89.firebaseapp.com",
+  projectId: "quiz-gc-5bf89",
+  storageBucket: "quiz-gc-5bf89.firebasestorage.app",
+  messagingSenderId: "564040843180",
+  appId: "1:564040843180:web:f82350a9980a3d733f4409"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const ADMIN_PASSWORD = "ndiaye1234";
+
+async function getScores() {
+  try {
+    const snapshot = await db.collection("scores").get();
+    const scores = [];
+    snapshot.forEach(doc => {
+      scores.push({ id: doc.id, ...doc.data() });
+    });
+    // Tri local
+    scores.sort((a,b) => {
+      if (a.score !== b.score) return b.score - a.score;
+      return a.time - b.time;
+    });
+    return scores;
+  } catch (error) {
+    console.error("Erreur:", error);
+    return [];
+  }
+}
+
+async function deleteScore(id) {
+  await db.collection("scores").doc(id).delete();
+}
+
+async function resetAll() {
+  if (confirm("⚠️ Supprimer TOUS les scores ?")) {
+    const snapshot = await db.collection("scores").get();
+    for (const doc of snapshot.docs) {
+      await db.collection("scores").doc(doc.id).delete();
+    }
+    loadData();
+  }
+}
+
+function formatTime(sec) {
+  return `${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,'0')}`;
+}
+
+async function loadData(search = "") {
+  const scores = await getScores();
+  document.getElementById("totalCount").innerHTML = scores.length;
+  document.getElementById("totalQuizzes").innerHTML = scores.length;
+  const avg = scores.length ? (scores.reduce((a,b) => a + b.score, 0) / scores.length).toFixed(1) : 0;
+  document.getElementById("avgScore").innerHTML = avg;
+  const best = scores.length ? Math.max(...scores.map(s => s.score)) : 0;
+  document.getElementById("bestScore").innerHTML = best;
+  
+  let filtered = scores;
+  if (search) filtered = scores.filter(s => s.name && s.name.toLowerCase().includes(search.toLowerCase()));
+  
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  filtered.forEach((s, i) => {
+    const row = tbody.insertRow();
+    row.insertCell(0).innerHTML = i+1;
+    row.insertCell(1).innerHTML = s.name || "?";
+    row.insertCell(2).innerHTML = `<strong style="color:#FFD700">${s.score}/10</strong>`;
+    row.insertCell(3).innerHTML = formatTime(s.time);
+    row.insertCell(4).innerHTML = s.date ? new Date(s.date).toLocaleDateString() : "-";
+    const btn = document.createElement("button");
+    btn.innerHTML = "🗑️ Supprimer";
+    btn.className = "delete-btn";
+    btn.onclick = async () => { await deleteScore(s.id); loadData(); };
+    row.insertCell(5).appendChild(btn);
+  });
+}
+
+function exportCSV() {
+  getScores().then(scores => {
+    let csv = "Nom,Score,Temps,Date\n";
+    scores.forEach(s => csv += `${s.name},${s.score},${s.time},${s.date}\n`);
+    const blob = new Blob([csv], {type: "text/csv"});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "scores.csv";
+    link.click();
+  });
+}
+
+function login() {
+  if (document.getElementById("password").value === ADMIN_PASSWORD) {
+    document.getElementById("loginPanel").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    loadData();
+  } else {
+    alert("Mot de passe incorrect");
+  }
+}
+
+document.getElementById("loginBtn").onclick = login;
+document.getElementById("exportBtn").onclick = exportCSV;
+document.getElementById("resetBtn").onclick = resetAll;
+document.getElementById("search").oninput = (e) => loadData(e.target.value);
+</script>
+</body>
+</html>
