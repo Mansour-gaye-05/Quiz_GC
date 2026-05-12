@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administration - Quiz Génie Civil</title>
+  <title>Administration - Quiz</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -12,36 +12,32 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); font-family: 'Inter', sans-serif; padding: 2rem; }
     .container { max-width: 1200px; margin: 0 auto; background: rgba(10,26,47,0.6); backdrop-filter: blur(14px); border-radius: 2rem; padding: 2rem; border: 1px solid rgba(255,215,0,0.25); }
-    h1 { color: #FFD700; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    h1 { color: #FFD700; margin-bottom: 2rem; }
     .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
     .stat-card { background: rgba(0,0,0,0.3); border-radius: 1rem; padding: 1rem; text-align: center; }
     .stat-number { font-size: 2rem; font-weight: bold; color: #FFD700; }
     .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
-    .admin-section { background: rgba(0,0,0,0.3); border-radius: 1rem; padding: 1rem; margin-bottom: 1.5rem; }
-    .admin-section h3 { color: #FFD700; margin-bottom: 1rem; }
     .search-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .search-bar input { flex: 1; padding: 0.6rem 1rem; border-radius: 2rem; border: none; min-width: 200px; }
-    .btn { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; padding: 0.6rem 1.2rem; border-radius: 2rem; cursor: pointer; font-weight: bold; color: #0A1A2F; }
+    .search-bar input { flex: 1; padding: 0.6rem 1rem; border-radius: 2rem; border: none; }
+    .btn { background: linear-gradient(95deg, #FFD700, #FFC107); border: none; padding: 0.6rem 1.2rem; border-radius: 2rem; cursor: pointer; font-weight: bold; }
     .btn-danger { background: #dc3545; color: white; }
-    .btn-secondary { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,215,0,0.5); color: white; }
     .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); color: white; }
     th { background: rgba(255,215,0,0.2); color: #FFD700; position: sticky; top: 0; }
-    td { color: white; }
     .delete-btn { background: rgba(220,53,69,0.8); border: none; color: white; padding: 0.3rem 0.8rem; border-radius: 0.5rem; cursor: pointer; }
     .login-box { max-width: 400px; margin: 100px auto; text-align: center; }
-    .login-box input { width: 100%; padding: 1rem; border-radius: 2rem; border: none; margin: 1rem 0; font-size: 1rem; }
-    .notification { position: fixed; top: 20px; right: 20px; background: rgba(40,167,69,0.95); color: white; padding: 1rem; border-radius: 1rem; z-index: 1000; animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .login-box input { width: 100%; padding: 1rem; border-radius: 2rem; border: none; margin: 1rem 0; }
     .warning { background: rgba(220,53,69,0.9); color: white; padding: 0.8rem; border-radius: 1rem; margin: 1rem 0; display: none; }
     .warning.show { display: block; }
+    .notification { position: fixed; top: 20px; right: 20px; background: rgba(40,167,69,0.95); color: white; padding: 1rem; border-radius: 1rem; z-index: 1000; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @media (max-width: 768px) { .stats { grid-template-columns: repeat(2,1fr); } .container { padding: 1rem; } }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1><i class="fas fa-user-shield"></i> Administration Quiz Génie Civil</h1>
+  <h1><i class="fas fa-user-shield"></i> Administration Quiz</h1>
 
   <div id="loginPanel" class="login-box">
     <i class="fas fa-lock" style="font-size: 3rem; color: #FFD700;"></i>
@@ -53,31 +49,29 @@
   <div id="dashboard" style="display:none">
     <div class="stats">
       <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Participants</div></div>
-      <div class="stat-card"><div class="stat-number" id="avgScore">0</div><div class="stat-label">Moyenne (/10)</div></div>
+      <div class="stat-card"><div class="stat-number" id="avgScore">0</div><div class="stat-label">Moyenne</div></div>
       <div class="stat-card"><div class="stat-number" id="bestScore">0</div><div class="stat-label">Meilleur score</div></div>
       <div class="stat-card"><div class="stat-number" id="totalQuizzes">0</div><div class="stat-label">Quiz complétés</div></div>
     </div>
 
-    <div class="admin-section">
-      <h3><i class="fas fa-list"></i> Participants en temps réel</h3>
-      <div class="search-bar">
-        <input type="text" id="search" placeholder="Rechercher un participant...">
-        <button id="exportBtn" class="btn"><i class="fas fa-download"></i> Exporter CSV</button>
-        <button id="resetBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Tout réinitialiser</button>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead><tr><th>#</th><th>Nom</th><th>Score</th><th>Temps</th><th>Date</th><th>Action</th></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Rechercher...">
+      <button id="exportBtn" class="btn"><i class="fas fa-download"></i> Exporter CSV</button>
+      <button id="resetBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Tout supprimer</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead><tr><th>#</th><th>Nom</th><th>Score</th><th>Temps</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
   </div>
   <div id="warningMsg" class="warning"></div>
 </div>
 
 <script>
-// ========== FIREBASE ==========
+// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAOiTRI3aLoSnl2IuUP5L6vhnsZX0mgCmA",
   authDomain: "quiz-gc-5bf89.firebaseapp.com",
@@ -87,6 +81,7 @@ const firebaseConfig = {
   appId: "1:564040843180:web:f82350a9980a3d733f4409"
 };
 
+// Initialiser Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -98,38 +93,29 @@ function formatTime(sec) {
   return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
 }
 
-function showWarning(msg, isError = true) {
+function showWarning(msg) {
   const warning = document.getElementById("warningMsg");
   warning.textContent = msg;
   warning.classList.add("show");
   setTimeout(() => warning.classList.remove("show"), 3000);
 }
 
-function showNotification(name, score) {
-  const notif = document.createElement("div");
-  notif.className = "notification";
-  notif.innerHTML = `<i class="fas fa-user-plus"></i> Nouveau participant : ${name} (${score}/10)`;
-  document.body.appendChild(notif);
-  setTimeout(() => notif.remove(), 3000);
-}
-
-function updateDashboardStats(scores) {
-  document.getElementById("totalCount").innerHTML = scores.length;
-  document.getElementById("totalQuizzes").innerHTML = scores.length;
-  const avg = scores.length ? (scores.reduce((a,b) => a + b.score, 0) / scores.length).toFixed(1) : 0;
-  document.getElementById("avgScore").innerHTML = avg;
-  const best = scores.length ? Math.max(...scores.map(s => s.score)) : 0;
-  document.getElementById("bestScore").innerHTML = best;
+function formatDate(timestamp) {
+  if (!timestamp) return "-";
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleString();
+  } catch(e) {
+    return "-";
+  }
 }
 
 function renderTable(scores, search) {
   const tbody = document.getElementById("tableBody");
-  if (!tbody) return;
   tbody.innerHTML = "";
   
   let filtered = [...scores];
   if (search) filtered = filtered.filter(s => s.name && s.name.toLowerCase().includes(search.toLowerCase()));
-  
   filtered.sort((a,b) => b.score - a.score || a.time - b.time);
   
   filtered.forEach((s, i) => {
@@ -138,82 +124,95 @@ function renderTable(scores, search) {
     row.insertCell(1).innerHTML = s.name || "?";
     row.insertCell(2).innerHTML = `<strong style="color:#FFD700">${s.score || 0}/10</strong>`;
     row.insertCell(3).innerHTML = formatTime(s.time);
-    row.insertCell(4).innerHTML = s.date ? new Date(s.date).toLocaleString() : "-";
+    row.insertCell(4).innerHTML = formatDate(s.date);
     const btn = document.createElement("button");
     btn.innerHTML = "🗑️ Supprimer";
     btn.className = "delete-btn";
     btn.onclick = async () => {
       if (confirm(`Supprimer ${s.name} ?`)) {
         await db.collection("scores").doc(s.id).delete();
-        showWarning(`✅ ${s.name} supprimé`, false);
+        showWarning(`✅ ${s.name} supprimé`);
       }
     };
     row.insertCell(5).appendChild(btn);
   });
 }
 
+function showNotification(name, score) {
+  const notif = document.createElement("div");
+  notif.className = "notification";
+  notif.innerHTML = `<i class="fas fa-user-plus"></i> Nouveau : ${name} (${score}/10)`;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000);
+}
+
 function startRealtimeListener() {
   if (unsubscribe) unsubscribe();
   
-  let previousScores = [];
+  let previousIds = new Set();
   
   unsubscribe = db.collection("scores")
-    .orderBy("score", "desc")
-    .orderBy("time", "asc")
     .onSnapshot((snapshot) => {
       const scores = [];
+      const currentIds = new Set();
+      
       snapshot.forEach(doc => {
-        scores.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        scores.push({ id: doc.id, ...data });
+        currentIds.add(doc.id);
+        
+        // Vérifier si c'est un nouveau document
+        if (!previousIds.has(doc.id) && data.name) {
+          showNotification(data.name, data.score);
+        }
       });
       
-      // Détecter les nouveaux participants
-      if (previousScores.length > 0) {
-        const newScores = scores.filter(s => 
-          !previousScores.some(p => p.deviceId === s.deviceId)
-        );
-        newScores.forEach(newScore => {
-          if (newScore.name) showNotification(newScore.name, newScore.score);
-        });
-      }
-      
-      previousScores = [...scores];
-      updateDashboardStats(scores);
+      previousIds = currentIds;
+      updateStats(scores);
       renderTable(scores, document.getElementById("search")?.value || "");
     }, (error) => {
-      console.error("Erreur Firestore:", error);
-      showWarning("Erreur de connexion Firebase", true);
+      console.error("Firestore error:", error);
+      showWarning("❌ Erreur de connexion Firebase - Vérifiez les règles");
     });
 }
 
+function updateStats(scores) {
+  document.getElementById("totalCount").innerHTML = scores.length;
+  document.getElementById("totalQuizzes").innerHTML = scores.length;
+  const avg = scores.length ? (scores.reduce((a,b) => a + b.score, 0) / scores.length).toFixed(1) : 0;
+  document.getElementById("avgScore").innerHTML = avg;
+  const best = scores.length ? Math.max(...scores.map(s => s.score)) : 0;
+  document.getElementById("bestScore").innerHTML = best;
+}
+
 async function resetAllScores() {
-  if (confirm("⚠️ RÉINITIALISATION TOTALE ⚠️\n\nSupprimer TOUS les scores ?")) {
+  if (confirm("⚠️ Supprimer TOUS les scores ?")) {
     const snapshot = await db.collection("scores").get();
-    const batch = db.batch();
-    snapshot.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-    showWarning("✅ Tous les scores ont été supprimés !", false);
+    snapshot.forEach(async (doc) => {
+      await db.collection("scores").doc(doc.id).delete();
+    });
+    showWarning("✅ Tous les scores supprimés");
   }
 }
 
 async function exportCSV() {
   const snapshot = await db.collection("scores").get();
   const scores = [];
-  snapshot.forEach(doc => scores.push({ ...doc.data() }));
+  snapshot.forEach(doc => scores.push(doc.data()));
   
-  if (!scores.length) { showWarning("Aucune donnée à exporter"); return; }
+  if (!scores.length) { showWarning("Aucune donnée"); return; }
   
-  let csv = "Classement;Nom;Score;Temps(s);Temps formaté;Date\n";
-  scores.sort((a,b) => b.score - a.score || a.time - b.time);
-  scores.forEach((s, i) => {
-    csv += `${i+1};${s.name};${s.score}/10;${s.time};${formatTime(s.time)};${s.date ? new Date(s.date).toLocaleString() : ""}\n`;
+  let csv = "Nom;Score;Temps;Date\n";
+  scores.forEach(s => {
+    csv += `${s.name};${s.score}/10;${formatTime(s.time)};${formatDate(s.date)}\n`;
   });
   
-  const blob = new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8"});
+  const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "quiz_scores.csv";
+  link.download = "scores.csv";
   link.click();
-  showWarning("📥 Export CSV réussi !", false);
+  showWarning("Export CSV réussi");
 }
 
 function login() {
@@ -222,7 +221,7 @@ function login() {
     document.getElementById("loginPanel").style.display = "none";
     document.getElementById("dashboard").style.display = "block";
     startRealtimeListener();
-    showWarning("✅ Connecté - Suivi en temps réel activé", false);
+    showWarning("✅ Connecté - Suivi temps réel");
   } else {
     showWarning("❌ Mot de passe incorrect");
   }
@@ -232,14 +231,14 @@ function login() {
 document.getElementById("loginBtn").onclick = login;
 document.getElementById("resetBtn").onclick = resetAllScores;
 document.getElementById("exportBtn").onclick = exportCSV;
-document.getElementById("search").oninput = (e) => {
+document.getElementById("search").addEventListener("input", (e) => {
   const search = e.target.value;
   db.collection("scores").get().then(snapshot => {
     const scores = [];
     snapshot.forEach(doc => scores.push({ id: doc.id, ...doc.data() }));
     renderTable(scores, search);
   });
-};
+});
 </script>
 </body>
 </html>
