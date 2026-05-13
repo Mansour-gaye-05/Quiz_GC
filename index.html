@@ -6,6 +6,8 @@
   <title>Quiz Génie Civil</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: radial-gradient(circle at 10% 20%, #0B1D2E, #05101C); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; font-family: 'Inter', sans-serif; }
@@ -71,11 +73,9 @@
 <div class="app-container">
   <div id="homeScreen" class="screen active">
     <div class="logo-wrapper">
-        <!-- ZONE LOGO - Remplacez l'image par votre logo -->
-        <img src="img/logo.png" alt="Club Génie Civil" class="logo-img" id="clubLogo" width="250" height="150">
-        <!-- Version texte de secours -->
-        <div class="logo-text">CLUB GÉNIE CIVIL</div>
-        <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
+      <div class="logo-icon"><i class="fas fa-hard-hat"></i><i class="fas fa-drafting-compass"></i></div>
+      <div class="logo-text">CLUB GÉNIE CIVIL</div>
+      <div class="subtitle">UFR SCIENCES DE L'INGÉNIEUR</div>
     </div>
     <h2 class="conf-name">Conférence Les perspectives de l'intelligence artificielle dans le Génie Civil</h2>
     <div class="name-input-group">
@@ -89,9 +89,7 @@
       <h3>🏆 Meilleurs scores</h3>
       <div id="leaderboardPreviewList">Chargement...</div>
     </div>
-    <div class="admin-link">
-      <a href="admin.html">🔒 Administration</a>
-    </div>
+    <div class="admin-link"><a href="admin.html">🔒 Administration</a></div>
   </div>
 
   <div id="quizScreen" class="screen">
@@ -134,6 +132,19 @@
 </div>
 
 <script>
+// ========== FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyAOiTRI3aLoSnl2IuUP5L6vhnsZX0mgCmA",
+  authDomain: "quiz-gc-5bf89.firebaseapp.com",
+  projectId: "quiz-gc-5bf89",
+  storageBucket: "quiz-gc-5bf89.firebasestorage.app",
+  messagingSenderId: "564040843180",
+  appId: "1:564040843180:web:f82350a9980a3d733f4409"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // ========== DONNEES DU QUIZ ==========
 const QUIZ_DATA = [
   { text: "Quelle est la principale fonction d'un chaînage dans une maçonnerie ?", options: ["Assurer l'esthétique", "Relier les murs et répartir les efforts", "Protéger contre l'humidité", "Augmenter la hauteur"], correct: 1 },
@@ -169,8 +180,10 @@ const homeBtn = document.getElementById("homeBtn");
 const alreadyPlayedHomeBtn = document.getElementById("alreadyPlayedHomeBtn");
 const usernameInput = document.getElementById("username");
 const warningMessage = document.getElementById("warningMessage");
+const liveDisplay = document.getElementById("liveNameDisplay");
+const nameField = document.getElementById("username");
 
-// ========== STOCKAGE LOCAL ==========
+// ========== FONCTIONS FIREBASE ==========
 function getDeviceId() {
   let id = localStorage.getItem("deviceId");
   if (!id) {
@@ -180,52 +193,51 @@ function getDeviceId() {
   return id;
 }
 
-function getScores() {
-  const stored = localStorage.getItem("quizScores");
-  if (!stored) return [];
-  try { return JSON.parse(stored); } catch(e) { return []; }
-}
-
-function saveScore(name, score, time, deviceId) {
-  const scores = getScores();
-  const existing = scores.find(s => s.deviceId === deviceId);
-  if (!existing) {
-    scores.push({ name, score, time, deviceId, date: Date.now() });
-    scores.sort((a,b) => b.score - a.score || a.time - b.time);
-    localStorage.setItem("quizScores", JSON.stringify(scores));
+async function saveScoreToFirebase(name, score, time, deviceId) {
+  try {
+    await db.collection("scores").add({
+      name: name,
+      score: score,
+      time: time,
+      deviceId: deviceId,
+      date: new Date().toISOString()
+    });
+    console.log("✅ Score sauvegardé dans Firebase");
     return true;
+  } catch (error) {
+    console.error("❌ Erreur Firebase:", error);
+    return false;
   }
-  return false;
 }
 
-function checkAlreadyPlayed(deviceId) {
-  const scores = getScores();
-  return scores.some(s => s.deviceId === deviceId);
+async function checkAlreadyPlayed(deviceId) {
+  try {
+    const snapshot = await db.collection("scores").where("deviceId", "==", deviceId).get();
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("❌ Erreur vérification:", error);
+    return false;
+  }
 }
 
-function formatTime(sec) {
-  return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+async function getScoresFromFirebase() {
+  try {
+    const snapshot = await db.collection("scores").get();
+    const scores = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      scores.push({ name: data.name, score: data.score, time: data.time, date: data.date });
+    });
+    scores.sort((a,b) => b.score - a.score || a.time - b.time);
+    return scores;
+  } catch (error) {
+    console.error("❌ Erreur chargement:", error);
+    return [];
+  }
 }
 
-function showWarning(msg) {
-  warningMessage.textContent = msg;
-  warningMessage.classList.add("show");
-  setTimeout(() => warningMessage.classList.remove("show"), 3000);
-}
-
-function showScreen(screenName) {
-  homeScreen.classList.remove("active");
-  quizScreen.classList.remove("active");
-  resultScreen.classList.remove("active");
-  alreadyPlayedScreen.classList.remove("active");
-  if (screenName === "home") homeScreen.classList.add("active");
-  else if (screenName === "quiz") quizScreen.classList.add("active");
-  else if (screenName === "result") resultScreen.classList.add("active");
-  else if (screenName === "alreadyPlayed") alreadyPlayedScreen.classList.add("active");
-}
-
-function updateLeaderboards() {
-  const scores = getScores();
+async function updateLeaderboards() {
+  const scores = await getScoresFromFirebase();
   const previewDiv = document.getElementById("leaderboardPreviewList");
   const fullDiv = document.getElementById("fullLeaderboard");
   
@@ -256,21 +268,38 @@ function updateLeaderboards() {
   }
 }
 
-// ========== AFFICHAGE NOM EN TEMPS RÉEL ==========
-const liveDisplay = document.getElementById("liveNameDisplay");
-const nameField = document.getElementById("username");
-const startButton = document.getElementById("startQuizBtn");
+function formatTime(sec) {
+  return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+}
 
+function showWarning(msg) {
+  warningMessage.textContent = msg;
+  warningMessage.classList.add("show");
+  setTimeout(() => warningMessage.classList.remove("show"), 3000);
+}
+
+function showScreen(screenName) {
+  homeScreen.classList.remove("active");
+  quizScreen.classList.remove("active");
+  resultScreen.classList.remove("active");
+  alreadyPlayedScreen.classList.remove("active");
+  if (screenName === "home") homeScreen.classList.add("active");
+  else if (screenName === "quiz") quizScreen.classList.add("active");
+  else if (screenName === "result") resultScreen.classList.add("active");
+  else if (screenName === "alreadyPlayed") alreadyPlayedScreen.classList.add("active");
+}
+
+// ========== AFFICHAGE NOM ==========
 function updateLiveNameDisplay() {
   const name = nameField.value.trim();
   if (name !== "") {
     liveDisplay.innerHTML = `<span class="prefix">👤 Participant :</span> <span class="name">${escapeHtml(name)}</span>`;
     liveDisplay.classList.add("show");
-    startButton.disabled = false;
+    startBtn.disabled = false;
   } else {
     liveDisplay.innerHTML = "";
     liveDisplay.classList.remove("show");
-    startButton.disabled = true;
+    startBtn.disabled = true;
   }
 }
 
@@ -382,7 +411,7 @@ function launchCelebration(score) {
   setTimeout(() => container.remove(), 5000);
 }
 
-function finishQuiz() {
+async function finishQuiz() {
   quizActive = false;
   waitingForTransition = false;
   stopTimer();
@@ -412,10 +441,12 @@ function finishQuiz() {
   
   const deviceId = getDeviceId();
   const userName = currentUserName.trim();
-  saveScore(userName, score, quizTimerSeconds, deviceId);
-  updateLeaderboards();
   
-  const scores = getScores();
+  // Sauvegarde dans Firebase
+  await saveScoreToFirebase(userName, score, quizTimerSeconds, deviceId);
+  await updateLeaderboards();
+  
+  const scores = await getScoresFromFirebase();
   let rank = 1;
   for (let i = 0; i < scores.length; i++) {
     if (scores[i].name === userName && scores[i].score === score && scores[i].time === quizTimerSeconds) {
@@ -444,9 +475,9 @@ function finishQuiz() {
   showScreen("result");
 }
 
-function startQuiz() {
+async function startQuiz() {
   const deviceId = getDeviceId();
-  const alreadyPlayed = checkAlreadyPlayed(deviceId);
+  const alreadyPlayed = await checkAlreadyPlayed(deviceId);
   if (alreadyPlayed) {
     document.getElementById("previousScoreInfo").innerHTML = "🔒 Cet appareil a déjà participé !";
     showScreen("alreadyPlayed");
